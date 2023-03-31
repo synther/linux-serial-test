@@ -45,6 +45,7 @@ int _cl_stop_on_error = 0;
 int _cl_single_byte = -1;
 int _cl_another_byte = -1;
 int _cl_rts_cts = 0;
+int _cl_xon_xoff = 0;
 int _cl_2_stop_bit = 0;
 int _cl_parity = 0;
 int _cl_odd_parity = 0;
@@ -281,6 +282,7 @@ static void display_help(void)
 			"  -y, --single-byte        Send specified byte to the serial port\n"
 			"  -z, --second-byte        Send another specified byte to the serial port\n"
 			"  -c, --rts-cts            Enable RTS/CTS flow control\n"
+			"  -x, --xon-xoff           Enable XON/XOFF flow control\n"
 			"  -B, --2-stop-bit         Use two stop bits per character\n"
 			"  -P, --parity             Use parity bit (odd, even, mark, space)\n"
 			"  -k, --loopback           Use internal hardware loop back\n"
@@ -316,7 +318,7 @@ static void process_options(int argc, char * argv[])
 {
 	for (;;) {
 		int option_index = 0;
-		static const char *short_options = "hb:p:d:R:TsSy:z:cBertq:Qml:a:w:o:i:P:kKAI:O:W:Znf";
+		static const char *short_options = "hb:p:d:R:TsSy:z:cBertq:Qml:a:w:o:i:P:kKAI:O:W:Znfx";
 		static const struct option long_options[] = {
 			{"help", no_argument, 0, 0},
 			{"baud", required_argument, 0, 'b'},
@@ -329,6 +331,7 @@ static void process_options(int argc, char * argv[])
 			{"single-byte", required_argument, 0, 'y'},
 			{"second-byte", required_argument, 0, 'z'},
 			{"rts-cts", no_argument, 0, 'c'},
+			{"xon-xoff", no_argument, 0, 'x'},
 			{"2-stop-bit", no_argument, 0, 'B'},
 			{"parity", required_argument, 0, 'P'},
 			{"loopback", no_argument, 0, 'k'},
@@ -401,6 +404,9 @@ static void process_options(int argc, char * argv[])
 		}
 		case 'c':
 			_cl_rts_cts = 1;
+			break;
+		case 'x':
+			_cl_xon_xoff = 1;
 			break;
 		case 'B':
 			_cl_2_stop_bit = 1;
@@ -628,6 +634,11 @@ static void setup_serial_port(int baud)
 		newtio.c_cflag |= CRTSCTS;
 	}
 
+	if (_cl_xon_xoff) {
+		newtio.c_iflag |= IXON;
+		newtio.c_iflag |= IXOFF;
+	}
+
 	if (_cl_2_stop_bit) {
 		newtio.c_cflag |= CSTOPB;
 	}
@@ -642,7 +653,6 @@ static void setup_serial_port(int baud)
 		}
 	}
 
-	newtio.c_iflag = 0;
 	newtio.c_oflag = 0;
 	newtio.c_lflag = 0;
 
